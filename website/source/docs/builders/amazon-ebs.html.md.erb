@@ -45,30 +45,9 @@ builder.
 
 ### Required:
 
--   `access_key` (string) - The access key used to communicate with AWS. [Learn
-    how to set this](amazon.html#specifying-amazon-credentials). This is not
-    required if you are using `use_vault_aws_engine` for authentication
-    instead.
-
--   `ami_name` (string) - The name of the resulting AMI that will appear when
-    managing AMIs in the AWS console or via APIs. This must be unique. To help
-    make this unique, use a function like `timestamp` (see [template
-    engine](../templates/engine.html) for more info).
-
--   `instance_type` (string) - The EC2 instance type to use while building the
-    AMI, such as `t2.small`.
-
--   `region` (string) - The name of the region, such as `us-east-1`, in which
-    to launch the EC2 instance to create the AMI.
-
--   `secret_key` (string) - The secret key used to communicate with AWS. [Learn
-    how to set this](amazon.html#specifying-amazon-credentials). This is not
-    required if you are using `use_vault_aws_engine` for authentication
-    instead.
-
--   `source_ami` (string) - The initial AMI used as a base for the newly
-    created machine. `source_ami_filter` may be used instead to populate this
-    automatically.
+<%= partial "partials/builders/amazon-common/AccessConfig-required" %>
+<%= partial "partials/builders/amazon-common/AMIConfig-required" %>
+<%= partial "partials/builders/amazon-common/RunConfig-required" %>
 
 ### Optional:
 
@@ -85,81 +64,10 @@ builder.
 
     <%= partial "partials/builders/aws-common-block-device-i-v" %>
 
--   `ami_description` (string) - The description to set for the resulting
-    AMI(s). By default this description is empty. This is a [template
-    engine](../templates/engine.html), see [Build template
-    data](#build-template-data) for more information.
+<%= partial "partials/builders/amazon-common/AccessConfig-not-required" %>
+<%= partial "partials/builders/amazon-common/AMIConfig-not-required" %>
+<%= partial "partials/builders/amazon-common/RunConfig-not-required" %>
 
--   `ami_groups` (array of strings) - A list of groups that have access to
-    launch the resulting AMI(s). By default no groups have permission to launch
-    the AMI. `all` will make the AMI publicly accessible. AWS currently doesn't
-    accept any value other than `all`.
-
--   `ami_product_codes` (array of strings) - A list of product codes to
-    associate with the AMI. By default no product codes are associated with the
-    AMI.
-
--   `ami_regions` (array of strings) - A list of regions to copy the AMI to.
-    Tags and attributes are copied along with the AMI. AMI copying takes time
-    depending on the size of the AMI, but will generally take many minutes.
-
--   `ami_users` (array of strings) - A list of account IDs that have access to
-    launch the resulting AMI(s). By default no additional users other than the
-    user creating the AMI has permissions to launch it.
-
--   `ami_virtualization_type` (string) - The type of virtualization for the AMI
-    you are building. This option must match the supported virtualization type
-    of `source_ami`. Can be `paravirtual` or `hvm`.
-
--   `associate_public_ip_address` (boolean) - If using a non-default VPC,
-    public IP addresses are not provided by default. If this is `true`, your
-    new instance will get a Public IP. default: `false`
-
--   `availability_zone` (string) - Destination availability zone to launch
-    instance in. Leave this empty to allow Amazon to auto-assign.
-
--   `block_duration_minutes` (int64) - Requires `spot_price` to be set. The
-    required duration for the Spot Instances (also known as Spot blocks). This
-    value must be a multiple of 60 (60, 120, 180, 240, 300, or 360). You can't
-    specify an Availability Zone group or a launch group if you specify a
-    duration.
-
--   `custom_endpoint_ec2` (string) - This option is useful if you use a cloud
-    provider whose API is compatible with aws EC2. Specify another endpoint
-    like this `https://ec2.custom.endpoint.com`.
-
--   `decode_authorization_messages` (boolean) - Enable automatic decoding of
-    any encoded authorization (error) messages using the
-    `sts:DecodeAuthorizationMessage` API. Note: requires that the effective
-    user/role have permissions to `sts:DecodeAuthorizationMessage` on resource
-    `*`. Default `false`.
-
--   `disable_stop_instance` (boolean) - Packer normally stops the build
-    instance after all provisioners have run. For Windows instances, it is
-    sometimes desirable to [run
-    Sysprep](http://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ami-create-standard.html)
-    which will stop the instance for you. If this is set to `true`, Packer
-    *will not* stop the instance but will assume that you will send the stop
-    signal yourself through your final provisioner. You can do this with a
-    [windows-shell
-    provisioner](https://www.packer.io/docs/provisioners/windows-shell.html).
-
-    Note that Packer will still wait for the instance to be stopped, and
-    failing to send the stop signal yourself, when you have set this flag to
-    `true`, will cause a timeout.
-
-    Example of a valid shutdown command:
-
-    ``` json
-    {
-      "type": "windows-shell",
-      "inline": ["\"c:\\Program Files\\Amazon\\Ec2ConfigService\\ec2config.exe\" -sysprep"]
-    }
-    ```
-
--   `ebs_optimized` (boolean) - Mark instance as [EBS
-    Optimized](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSOptimized.html).
-    Default `false`.
 
 -   `ena_support` (boolean) - Enable enhanced networking (ENA but not
     SriovNetSupport) on HVM-compatible AMIs. If set, add
@@ -226,45 +134,6 @@ builder.
     [TOTP](https://en.wikipedia.org/wiki/Time-based_One-time_Password_Algorithm)
     code. This should probably be a user variable since it changes all the
     time.
-
--   `profile` (string) - The profile to use in the shared credentials file for
-    AWS. See Amazon's documentation on [specifying
-    profiles](https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html#specifying-profiles)
-    for more details.
-
--   `region_kms_key_ids` (map of strings) - a map of regions to copy the ami
-    to, along with the custom kms key id (alias or arn) to use for encryption
-    for that region. Keys must match the regions provided in `ami_regions`. If
-    you just want to encrypt using a default ID, you can stick with
-    `kms_key_id` and `ami_regions`. If you want a region to be encrypted with
-    that region's default key ID, you can use an empty string `""` instead of a
-    key id in this map. (e.g. `"us-east-1": ""`) However, you cannot use
-    default key IDs if you are using this in conjunction with `snapshot_users`
-    -- in that situation you must use custom keys. For valid formats see
-    *KmsKeyId* in the [AWS API docs -
-    CopyImage](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CopyImage.html).
-
--   `run_tags` (object of key/value strings) - Tags to apply to the instance
-    that is *launched* to create the AMI. These tags are *not* applied to the
-    resulting AMI unless they're duplicated in `tags`. This is a [template
-    engine](../templates/engine.html), see [Build template
-    data](#build-template-data) for more information.
-
--   `run_volume_tags` (object of key/value strings) - Tags to apply to the
-    volumes that are *launched* to create the AMI. These tags are *not* applied
-    to the resulting AMI unless they're duplicated in `tags`. This is a
-    [template engine](../templates/engine.html), see [Build template
-    data](#build-template-data) for more information.
-
--   `security_group_id` (string) - The ID (*not* the name) of the security
-    group to assign to the instance. By default this is not set and Packer will
-    automatically create a new temporary security group to allow SSH access.
-    Note that if this is specified, you must be sure the security group allows
-    access to the `ssh_port` given below.
-
--   `security_group_ids` (array of strings) - A list of security groups as
-    described above. Note that if this is specified, you must omit the
-    `security_group_id`.
 
 -   `security_group_filter` (object) - Filters used to populate the
     `security_group_ids` field. Example:
